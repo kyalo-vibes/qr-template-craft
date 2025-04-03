@@ -13,7 +13,9 @@ import {
   ArrowRight, 
   Zap, 
   ShieldCheck, 
-  CreditCard 
+  CreditCard,
+  Copy,
+  Check
 } from "lucide-react";
 import { 
   getAllTemplates, 
@@ -35,6 +37,21 @@ import {
   PaymentCallbackResponse
 } from "@/types/template";
 
+// Channel IDs for dropdown
+const channelOptions = [
+  { id: "1", name: "Mobile App" },
+  { id: "2", name: "Web Portal" },
+  { id: "3", name: "Branch Kiosk" },
+  { id: "4", name: "ATM" },
+  { id: "5", name: "Agency" }
+];
+
+// Response format options
+const responseFormatOptions = [
+  { id: "image", name: "Image" },
+  { id: "pdf", name: "PDF" }
+];
+
 const ApiTester: React.FC = () => {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -43,19 +60,31 @@ const ApiTester: React.FC = () => {
   // Generate QR Form
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [selectedJourneyId, setSelectedJourneyId] = useState<string>("");
+  const [selectedChannelId, setSelectedChannelId] = useState<string>("1");
+  const [selectedResponseFormat, setSelectedResponseFormat] = useState<string>("image");
   const [jsonData, setJsonData] = useState<string>('{\n  "amount": "100.00",\n  "currency": "USD"\n}');
   
   // Verify QR Form
   const [qrString, setQrString] = useState<string>('');
+  const [requestMessageId, setRequestMessageId] = useState<string>(generateRandomId());
+  const [requestDateTime, setRequestDateTime] = useState<string>(new Date().toISOString());
+  const [verifyChannelId, setVerifyChannelId] = useState<string>("1");
   
   // Payment Callback Form
   const [referenceNumber, setReferenceNumber] = useState<string>('');
   const [paymentRef, setPaymentRef] = useState<string>('');
+  const [callbackRequestMessageId, setCallbackRequestMessageId] = useState<string>(generateRandomId());
   
   // Response states
   const [generateResponse, setGenerateResponse] = useState<GenerateQRCodeResponse | null>(null);
   const [verifyResponse, setVerifyResponse] = useState<VerifyQRCodeResponse | null>(null);
   const [callbackResponse, setCallbackResponse] = useState<PaymentCallbackResponse | null>(null);
+  const [copySuccess, setCopySuccess] = useState<boolean>(false);
+
+  // Helper function to generate random ID
+  function generateRandomId() {
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  }
 
   // Fetch templates on component mount
   useEffect(() => {
@@ -97,7 +126,9 @@ const ApiTester: React.FC = () => {
       const request: GenerateQRCodeRequest = {
         templateId: parseInt(selectedTemplateId),
         journey: selectedJourneyId,
-        data: dataObj
+        data: dataObj,
+        channelId: parseInt(selectedChannelId),
+        responseFormat: selectedResponseFormat
       };
       
       const response = await generateStaticQRCode(request);
@@ -136,7 +167,9 @@ const ApiTester: React.FC = () => {
       const request: GenerateQRCodeRequest = {
         templateId: parseInt(selectedTemplateId),
         journey: selectedJourneyId,
-        data: dataObj
+        data: dataObj,
+        channelId: parseInt(selectedChannelId),
+        responseFormat: selectedResponseFormat
       };
       
       const response = await generateDynamicQRCode(request);
@@ -169,7 +202,11 @@ const ApiTester: React.FC = () => {
       }
       
       const request: VerifyQRCodeRequest = {
-        qrString: qrString
+        qrString: qrString,
+        requestMessageId: requestMessageId,
+        requestDateTime: requestDateTime,
+        requestType: "VerifyQRCode",
+        channelId: verifyChannelId
       };
       
       const response = await verifyQRCode(request);
@@ -203,7 +240,8 @@ const ApiTester: React.FC = () => {
       
       const request: PaymentCallbackRequest = {
         referenceNumber: referenceNumber,
-        paymentRef: paymentRef
+        paymentRef: paymentRef,
+        requestMessageId: callbackRequestMessageId
       };
       
       const response = await processPaymentCallback(request);
@@ -226,6 +264,8 @@ const ApiTester: React.FC = () => {
   // Copy QR string to clipboard
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
       toast({
         title: "Copied!",
         description: "QR string copied to clipboard."
@@ -237,19 +277,19 @@ const ApiTester: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <div className="container py-6">
-        <h1 className="text-2xl font-bold mb-6">QR Code API Tester</h1>
+        <h1 className="text-2xl font-bold mb-6 text-brand-primary">QR Code API Tester</h1>
         
         <Tabs defaultValue="generate">
-          <TabsList className="grid grid-cols-3 mb-6">
-            <TabsTrigger value="generate" className="text-sm md:text-base flex items-center">
+          <TabsList className="grid grid-cols-3 mb-6 bg-brand-primary/10">
+            <TabsTrigger value="generate" className="text-sm md:text-base flex items-center data-[state=active]:bg-brand-primary data-[state=active]:text-white">
               <QrCode className="mr-2 h-4 w-4" />
               Generate QR
             </TabsTrigger>
-            <TabsTrigger value="verify" className="text-sm md:text-base flex items-center">
+            <TabsTrigger value="verify" className="text-sm md:text-base flex items-center data-[state=active]:bg-brand-primary data-[state=active]:text-white">
               <ShieldCheck className="mr-2 h-4 w-4" />
               Verify QR
             </TabsTrigger>
-            <TabsTrigger value="callback" className="text-sm md:text-base flex items-center">
+            <TabsTrigger value="callback" className="text-sm md:text-base flex items-center data-[state=active]:bg-brand-primary data-[state=active]:text-white">
               <CreditCard className="mr-2 h-4 w-4" />
               Payment Callback
             </TabsTrigger>
@@ -258,9 +298,12 @@ const ApiTester: React.FC = () => {
           {/* Generate QR Section */}
           <TabsContent value="generate">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Generate QR Code</CardTitle>
+              <Card className="border-t-4 border-t-brand-primary shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-brand-primary flex items-center">
+                    <QrCode className="mr-2 h-5 w-5" />
+                    Generate QR Code
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -278,7 +321,7 @@ const ApiTester: React.FC = () => {
                             }
                           }}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="border-gray-300">
                             <SelectValue placeholder="Select template" />
                           </SelectTrigger>
                           <SelectContent>
@@ -293,7 +336,7 @@ const ApiTester: React.FC = () => {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Journey</label>
                         <Select value={selectedJourneyId} onValueChange={setSelectedJourneyId}>
-                          <SelectTrigger>
+                          <SelectTrigger className="border-gray-300">
                             <SelectValue placeholder="Select journey" />
                           </SelectTrigger>
                           <SelectContent>
@@ -307,21 +350,54 @@ const ApiTester: React.FC = () => {
                       </div>
                     </div>
                     
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Channel</label>
+                        <Select value={selectedChannelId} onValueChange={setSelectedChannelId}>
+                          <SelectTrigger className="border-gray-300">
+                            <SelectValue placeholder="Select channel" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {channelOptions.map(channel => (
+                              <SelectItem key={channel.id} value={channel.id}>
+                                {channel.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Response Format</label>
+                        <Select value={selectedResponseFormat} onValueChange={setSelectedResponseFormat}>
+                          <SelectTrigger className="border-gray-300">
+                            <SelectValue placeholder="Select format" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {responseFormatOptions.map(format => (
+                              <SelectItem key={format.id} value={format.id}>
+                                {format.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Data (JSON)</label>
                       <Textarea 
                         value={jsonData}
                         onChange={(e) => setJsonData(e.target.value)}
-                        className="h-60 font-mono text-sm"
+                        className="h-60 font-mono text-sm border-gray-300"
                         placeholder="Enter JSON data"
                       />
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
-                      <Button onClick={handleGenerateStaticQR} className="bg-qr-primary hover:bg-blue-600">
+                      <Button onClick={handleGenerateStaticQR} className="btn-primary">
                         Generate Static QR
                       </Button>
-                      <Button onClick={handleGenerateDynamicQR} className="bg-qr-accent hover:bg-indigo-600">
+                      <Button onClick={handleGenerateDynamicQR} className="btn-secondary">
                         Generate Dynamic QR
                       </Button>
                     </div>
@@ -329,9 +405,9 @@ const ApiTester: React.FC = () => {
                 </CardContent>
               </Card>
               
-              <Card>
-                <CardHeader>
-                  <CardTitle>Result</CardTitle>
+              <Card className="border-t-4 border-t-brand-secondary shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-brand-secondary">Result</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {generateResponse ? (
@@ -351,7 +427,7 @@ const ApiTester: React.FC = () => {
                       {generateResponse.referenceNumber && (
                         <div>
                           <p className="text-sm font-medium text-gray-500">Reference Number</p>
-                          <p className="font-mono">{generateResponse.referenceNumber}</p>
+                          <p className="font-mono bg-gray-50 p-2 rounded border">{generateResponse.referenceNumber}</p>
                         </div>
                       )}
                       
@@ -360,11 +436,12 @@ const ApiTester: React.FC = () => {
                           <div className="flex justify-between items-center">
                             <p className="text-sm font-medium text-gray-500">QR String</p>
                             <Button 
-                              variant="ghost" 
+                              variant="outline" 
                               size="sm"
                               onClick={() => copyToClipboard(generateResponse.qrString!)}
+                              className="text-brand-primary hover:text-brand-primary/80"
                             >
-                              Copy
+                              {copySuccess ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                             </Button>
                           </div>
                           <p className="font-mono text-sm break-all bg-gray-50 p-2 rounded border mt-1">
@@ -376,17 +453,20 @@ const ApiTester: React.FC = () => {
                       {generateResponse.qrImage && (
                         <div className="text-center">
                           <p className="text-sm font-medium text-gray-500 mb-2">QR Image</p>
-                          <img 
-                            src={generateResponse.qrImage} 
-                            alt="Generated QR Code" 
-                            className="max-w-full h-auto mx-auto border p-2"
-                            style={{ maxHeight: "200px" }}
-                          />
+                          <div className="border border-gray-200 rounded-lg p-4 bg-white inline-block">
+                            <img 
+                              src={generateResponse.qrImage} 
+                              alt="Generated QR Code" 
+                              className="max-w-full h-auto mx-auto"
+                              style={{ maxHeight: "200px" }}
+                            />
+                          </div>
                         </div>
                       )}
                     </div>
                   ) : (
-                    <div className="text-center py-12 text-gray-500">
+                    <div className="text-center py-12 text-gray-500 border border-dashed rounded-lg">
+                      <QrCode className="h-10 w-10 opacity-30 mx-auto mb-3" />
                       Generate a QR code to see the result here
                     </div>
                   )}
@@ -398,9 +478,12 @@ const ApiTester: React.FC = () => {
           {/* Verify QR Section */}
           <TabsContent value="verify">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Verify QR Code</CardTitle>
+              <Card className="border-t-4 border-t-brand-primary shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-brand-primary flex items-center">
+                    <ShieldCheck className="mr-2 h-5 w-5" />
+                    Verify QR Code
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
@@ -409,12 +492,38 @@ const ApiTester: React.FC = () => {
                       <Textarea 
                         value={qrString}
                         onChange={(e) => setQrString(e.target.value)}
-                        className="h-60 font-mono text-sm"
+                        className="h-40 font-mono text-sm border-gray-300"
                         placeholder="Enter QR string to verify"
                       />
                     </div>
                     
-                    <Button onClick={handleVerifyQR} className="bg-qr-primary hover:bg-blue-600 w-full">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Request Message ID</label>
+                        <Input 
+                          value={requestMessageId}
+                          onChange={(e) => setRequestMessageId(e.target.value)}
+                          className="border-gray-300"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Channel</label>
+                        <Select value={verifyChannelId} onValueChange={setVerifyChannelId}>
+                          <SelectTrigger className="border-gray-300">
+                            <SelectValue placeholder="Select channel" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {channelOptions.map(channel => (
+                              <SelectItem key={channel.id} value={channel.id}>
+                                {channel.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    <Button onClick={handleVerifyQR} className="btn-primary w-full">
                       <ShieldCheck className="mr-2 h-4 w-4" />
                       Verify QR Code
                     </Button>
@@ -422,9 +531,9 @@ const ApiTester: React.FC = () => {
                 </CardContent>
               </Card>
               
-              <Card>
-                <CardHeader>
-                  <CardTitle>Verification Result</CardTitle>
+              <Card className="border-t-4 border-t-brand-secondary shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-brand-secondary">Verification Result</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {verifyResponse ? (
@@ -464,7 +573,8 @@ const ApiTester: React.FC = () => {
                       )}
                     </div>
                   ) : (
-                    <div className="text-center py-12 text-gray-500">
+                    <div className="text-center py-12 text-gray-500 border border-dashed rounded-lg">
+                      <ShieldCheck className="h-10 w-10 opacity-30 mx-auto mb-3" />
                       Verify a QR code to see the result here
                     </div>
                   )}
@@ -476,17 +586,30 @@ const ApiTester: React.FC = () => {
           {/* Payment Callback Section */}
           <TabsContent value="callback">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Payment Callback</CardTitle>
+              <Card className="border-t-4 border-t-brand-primary shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-brand-primary flex items-center">
+                    <CreditCard className="mr-2 h-5 w-5" />
+                    Payment Callback
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Request Message ID</label>
+                      <Input 
+                        value={callbackRequestMessageId}
+                        onChange={(e) => setCallbackRequestMessageId(e.target.value)}
+                        className="border-gray-300"
+                      />
+                    </div>
+                    
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Reference Number</label>
                       <Input 
                         value={referenceNumber}
                         onChange={(e) => setReferenceNumber(e.target.value)}
+                        className="border-gray-300"
                         placeholder="Enter reference number"
                       />
                     </div>
@@ -496,11 +619,12 @@ const ApiTester: React.FC = () => {
                       <Input 
                         value={paymentRef}
                         onChange={(e) => setPaymentRef(e.target.value)}
+                        className="border-gray-300"
                         placeholder="Enter payment reference"
                       />
                     </div>
                     
-                    <Button onClick={handlePaymentCallback} className="bg-qr-primary hover:bg-blue-600 w-full">
+                    <Button onClick={handlePaymentCallback} className="btn-primary w-full">
                       <CreditCard className="mr-2 h-4 w-4" />
                       Process Payment Callback
                     </Button>
@@ -508,9 +632,9 @@ const ApiTester: React.FC = () => {
                 </CardContent>
               </Card>
               
-              <Card>
-                <CardHeader>
-                  <CardTitle>Callback Result</CardTitle>
+              <Card className="border-t-4 border-t-brand-secondary shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-brand-secondary">Callback Result</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {callbackResponse ? (
@@ -526,9 +650,20 @@ const ApiTester: React.FC = () => {
                         <p className="text-sm font-medium text-gray-500">Message</p>
                         <p>{callbackResponse.responseMessage}</p>
                       </div>
+                      
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Response Date/Time</p>
+                        <p>{callbackResponse.responseDateTime ? new Date(callbackResponse.responseDateTime).toLocaleString() : '-'}</p>
+                      </div>
+                      
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Request Message ID</p>
+                        <p className="font-mono">{callbackResponse.requestMessageId || '-'}</p>
+                      </div>
                     </div>
                   ) : (
-                    <div className="text-center py-12 text-gray-500">
+                    <div className="text-center py-12 text-gray-500 border border-dashed rounded-lg">
+                      <CreditCard className="h-10 w-10 opacity-30 mx-auto mb-3" />
                       Process a payment callback to see the result here
                     </div>
                   )}

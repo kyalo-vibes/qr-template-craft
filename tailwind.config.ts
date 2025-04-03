@@ -63,10 +63,15 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
+				brand: {
+					primary: '#00513B',   // Dark green
+					secondary: '#68AB00', // Light green
+					white: '#FFFFFF'      // White
+				},
 				qr: {
-					primary: '#3b82f6',
-					secondary: '#0f172a',
-					accent: '#4f46e5',
+					primary: '#00513B',
+					secondary: '#68AB00',
+					accent: '#00513B',
 					background: '#f8fafc'
 				}
 			},

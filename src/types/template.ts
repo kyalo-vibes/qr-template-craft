@@ -62,6 +62,9 @@ export interface GenerateQRCodeRequest {
   templateId: number;
   journey: string;
   data: Record<string, any>;
+  channelId?: number;
+  responseFormat?: string;
+  requestType?: string;
 }
 
 export interface GenerateQRCodeResponse {
@@ -70,10 +73,16 @@ export interface GenerateQRCodeResponse {
   referenceNumber?: string;
   qrString?: string;
   qrImage?: string;
+  format?: string;
+  size?: number;
 }
 
 export interface VerifyQRCodeRequest {
   qrString: string;
+  requestMessageId: string;
+  requestDateTime: string;
+  requestType: string;
+  channelId: string;
 }
 
 export interface VerifyQRCodeResponse {
@@ -81,14 +90,20 @@ export interface VerifyQRCodeResponse {
   responseMessage: string;
   data?: Record<string, any>;
   isValid: boolean;
+  requestMessageId?: string;
+  validationStatus?: string;
+  paymentRouting?: Record<string, string>;
 }
 
 export interface PaymentCallbackRequest {
   referenceNumber: string;
   paymentRef: string;
+  requestMessageId?: string;
 }
 
 export interface PaymentCallbackResponse {
   responseCode: string;
   responseMessage: string;
+  requestMessageId?: string;
+  responseDateTime?: Date;
 }
