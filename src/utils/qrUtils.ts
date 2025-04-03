@@ -68,3 +68,104 @@ export const processSubtags = (subtags: SubTemplateTag[]): any => {
   
   return result;
 };
+
+// Convert JSON structure to TLV-like format for display
+export interface TlvDisplayItem {
+  tag: string;
+  length: number | string;
+  value: string;
+  children: TlvDisplayItem[];
+  level: number;
+}
+
+export const convertToTlvStructure = (jsonData: any, level: number = 0): TlvDisplayItem[] => {
+  if (!jsonData || typeof jsonData !== 'object') return [];
+  
+  const result: TlvDisplayItem[] = [];
+  
+  Object.entries(jsonData).forEach(([key, value], index) => {
+    // Generate a placeholder tag number
+    const tagId = (index + 1).toString().padStart(2, '0');
+    
+    if (typeof value === 'object' && value !== null) {
+      // This is a nested structure
+      const children = convertToTlvStructure(value, level + 1);
+      const valLength = JSON.stringify(value).length;
+      
+      result.push({
+        tag: tagId,
+        length: valLength,
+        value: '',
+        children,
+        level
+      });
+    } else {
+      // This is a simple value
+      const strValue = String(value);
+      
+      result.push({
+        tag: tagId,
+        length: strValue.length,
+        value: strValue,
+        children: [],
+        level
+      });
+    }
+  });
+  
+  return result;
+};
+
+// Parse TLV string into structured format
+// This is a placeholder implementation - in real app would parse actual TLV format
+export const parseTlvString = (tlvString: string): TlvDisplayItem[] => {
+  // Try to parse as JSON first for demo
+  try {
+    const jsonObj = JSON.parse(tlvString);
+    return convertToTlvStructure(jsonObj);
+  } catch (e) {
+    // If not valid JSON, return mock structure for demo purposes
+    return [
+      { 
+        tag: "00", 
+        length: 2, 
+        value: "01",
+        children: [],
+        level: 0
+      },
+      { 
+        tag: "01", 
+        length: 2, 
+        value: "11",
+        children: [],
+        level: 0
+      },
+      { 
+        tag: "29", 
+        length: 43, 
+        value: "", 
+        level: 0,
+        children: [
+          { 
+            tag: "00", 
+            length: 8, 
+            value: "ke.go.qr",
+            children: [],
+            level: 1
+          },
+          { 
+            tag: "11", 
+            length: 27, 
+            value: "", 
+            level: 1,
+            children: [
+              { tag: "00", length: 2, value: "01", children: [], level: 2 },
+              { tag: "01", length: 6, value: "400200", children: [], level: 2 },
+              { tag: "02", length: 7, value: "4001002", children: [], level: 2 }
+            ]
+          }
+        ]
+      }
+    ];
+  }
+};
