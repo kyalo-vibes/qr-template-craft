@@ -21,17 +21,18 @@ const TagForm: React.FC<TagFormProps> = ({ tag, setTag, onSubmit, onCancel }) =>
     <div className="grid gap-4 py-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="tag-group">Tag Group</Label>
+          <Label htmlFor="tag-group">Tag Group <span className="text-red-500">*</span></Label>
           <Input 
             id="tag-group" 
             placeholder="e.g., Header, Data" 
             value={tag.tagGroup || ''}
             onChange={(e) => setTag({...tag, tagGroup: e.target.value})}
             className="border-gray-300"
+            required
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="tag-id">Tag ID</Label>
+          <Label htmlFor="tag-id">Tag ID <span className="text-red-500">*</span></Label>
           <Input 
             id="tag-id" 
             type="number"
@@ -39,19 +40,21 @@ const TagForm: React.FC<TagFormProps> = ({ tag, setTag, onSubmit, onCancel }) =>
             value={tag.tagId || ''}
             onChange={(e) => setTag({...tag, tagId: parseInt(e.target.value) || 0})}
             className="border-gray-300"
+            required
           />
         </div>
       </div>
       
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="content-desc">Description</Label>
+          <Label htmlFor="content-desc">Description <span className="text-red-500">*</span></Label>
           <Input 
             id="content-desc" 
             placeholder="e.g., Amount, Currency" 
             value={tag.contentDesc || ''}
             onChange={(e) => setTag({...tag, contentDesc: e.target.value})}
             className="border-gray-300"
+            required
           />
         </div>
         <div className="space-y-2">
@@ -97,23 +100,25 @@ const TagForm: React.FC<TagFormProps> = ({ tag, setTag, onSubmit, onCancel }) =>
       
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="min-length">Min Length</Label>
+          <Label htmlFor="min-length">Min Length <span className="text-red-500">*</span></Label>
           <Input 
             id="min-length" 
             type="number"
             value={tag.minLength || 0}
             onChange={(e) => setTag({...tag, minLength: parseInt(e.target.value) || 0})}
             className="border-gray-300"
+            required
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="max-length">Max Length</Label>
+          <Label htmlFor="max-length">Max Length <span className="text-red-500">*</span></Label>
           <Input 
             id="max-length" 
             type="number"
             value={tag.maxLength || 0}
             onChange={(e) => setTag({...tag, maxLength: parseInt(e.target.value) || 0})}
             className="border-gray-300"
+            required
           />
         </div>
       </div>
@@ -154,13 +159,15 @@ const TagForm: React.FC<TagFormProps> = ({ tag, setTag, onSubmit, onCancel }) =>
       </div>
       
       <div className="grid grid-cols-2 gap-4">
-        <div className="flex items-center space-x-2">
-          <Switch 
-            id="verify-json" 
-            checked={tag.verifyJson === '1'}
-            onCheckedChange={(checked) => setTag({...tag, verifyJson: checked ? '1' : '0'})}
-          />
+        <div className="space-y-2">
           <Label htmlFor="verify-json">Verify JSON</Label>
+          <Input 
+            id="verify-json"
+            placeholder="JSON verification expression"
+            value={tag.verifyJson === '1' ? tag.verifyJson || '' : ''}
+            onChange={(e) => setTag({...tag, verifyJson: e.target.value ? '1' : '0'})}
+            className="border-gray-300"
+          />
         </div>
         <div className="flex items-center space-x-2">
           <Switch 
@@ -184,10 +191,10 @@ const TagForm: React.FC<TagFormProps> = ({ tag, setTag, onSubmit, onCancel }) =>
       </div>
 
       <DialogFooter>
-        <Button variant="outline" onClick={onCancel}>
+        <Button variant="outline" onClick={onCancel} className="border-[#00513B] text-[#00513B]">
           Cancel
         </Button>
-        <Button className="bg-brand-primary hover:bg-brand-primary/90 text-white" onClick={onSubmit}>
+        <Button className="bg-[#00513B] hover:bg-[#00513B]/90 text-white" onClick={onSubmit}>
           Add Tag
         </Button>
       </DialogFooter>

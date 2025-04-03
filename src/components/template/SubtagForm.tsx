@@ -21,7 +21,7 @@ const SubtagForm: React.FC<SubtagFormProps> = ({ subtag, setSubtag, onSubmit, on
     <div className="grid gap-4 py-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="subtag-id">Subtag ID</Label>
+          <Label htmlFor="subtag-id">Subtag ID <span className="text-red-500">*</span></Label>
           <Input 
             id="subtag-id" 
             type="number"
@@ -29,16 +29,18 @@ const SubtagForm: React.FC<SubtagFormProps> = ({ subtag, setSubtag, onSubmit, on
             value={subtag.subTagId || ''}
             onChange={(e) => setSubtag({...subtag, subTagId: parseInt(e.target.value) || 0})}
             className="border-gray-300"
+            required
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="subtag-desc">Description</Label>
+          <Label htmlFor="subtag-desc">Description <span className="text-red-500">*</span></Label>
           <Input 
             id="subtag-desc" 
             placeholder="e.g., Version, Code" 
             value={subtag.contentDesc || ''}
             onChange={(e) => setSubtag({...subtag, contentDesc: e.target.value})}
             className="border-gray-300"
+            required
           />
         </div>
       </div>
@@ -84,28 +86,30 @@ const SubtagForm: React.FC<SubtagFormProps> = ({ subtag, setSubtag, onSubmit, on
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="subtag-min-length">Min Length</Label>
+          <Label htmlFor="subtag-min-length">Min Length <span className="text-red-500">*</span></Label>
           <Input 
             id="subtag-min-length" 
             type="number"
             value={subtag.minLength || 0}
             onChange={(e) => setSubtag({...subtag, minLength: parseInt(e.target.value) || 0})}
             className="border-gray-300"
+            required
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="subtag-max-length">Max Length</Label>
+          <Label htmlFor="subtag-max-length">Max Length <span className="text-red-500">*</span></Label>
           <Input 
             id="subtag-max-length" 
             type="number"
             value={subtag.maxLength || 0}
             onChange={(e) => setSubtag({...subtag, maxLength: parseInt(e.target.value) || 0})}
             className="border-gray-300"
+            required
           />
         </div>
       </div>
       
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <div className="flex items-center space-x-2">
           <Switch 
             id="subtag-required" 
@@ -114,15 +118,17 @@ const SubtagForm: React.FC<SubtagFormProps> = ({ subtag, setSubtag, onSubmit, on
           />
           <Label htmlFor="subtag-required">Required</Label>
         </div>
-        <div className="flex items-center space-x-2">
-          <Switch 
-            id="subtag-verify-json" 
-            checked={subtag.verifyJson === '1'}
-            onCheckedChange={(checked) => setSubtag({...subtag, verifyJson: checked ? '1' : '0'})}
-          />
+        <div className="space-y-2">
           <Label htmlFor="subtag-verify-json">Verify JSON</Label>
+          <Input 
+            id="subtag-verify-json"
+            placeholder="JSON verification expression"
+            value={subtag.verifyJson === '1' ? subtag.verifyJson || '' : ''}
+            onChange={(e) => setSubtag({...subtag, verifyJson: e.target.value ? '1' : '0'})}
+            className="border-gray-300"
+          />
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 col-span-2">
           <Switch 
             id="subtag-has-child" 
             checked={subtag.hasChild === '1'}
@@ -144,10 +150,10 @@ const SubtagForm: React.FC<SubtagFormProps> = ({ subtag, setSubtag, onSubmit, on
       </div>
 
       <DialogFooter>
-        <Button variant="outline" onClick={onCancel}>
+        <Button variant="outline" onClick={onCancel} className="border-[#00513B] text-[#00513B]">
           Cancel
         </Button>
-        <Button className="bg-brand-primary hover:bg-brand-primary/90 text-white" onClick={onSubmit}>
+        <Button className="bg-[#00513B] hover:bg-[#00513B]/90 text-white" onClick={onSubmit}>
           Add Subtag
         </Button>
       </DialogFooter>

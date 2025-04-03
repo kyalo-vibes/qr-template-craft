@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { Header } from "@/components/Header";
-import { Dialog } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Template, TemplateTag, SubTemplateTag } from "@/types/template";
@@ -14,7 +15,7 @@ import TemplateHeaderActions from "@/components/template/TemplateHeaderActions";
 import NewTemplateForm from "@/components/template/NewTemplateForm";
 import TagForm from "@/components/template/TagForm";
 import SubtagForm from "@/components/template/SubtagForm";
-import QrPreviewDialog from "@/components/template/QrPreviewDialog";
+import { QrCode } from "lucide-react";
 
 const TemplateManager: React.FC = () => {
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -27,8 +28,8 @@ const TemplateManager: React.FC = () => {
   const [selectedParentSubtagId, setSelectedParentSubtagId] = useState<number | null>(null);
   const [sampleQRString, setSampleQRString] = useState<string>('{}');
   const [copySuccess, setCopySuccess] = useState(false);
-  const [isQrPreviewOpen, setIsQrPreviewOpen] = useState(false);
-  const [qrPreviewUrl, setQrPreviewUrl] = useState<string | null>(null);
+  const [newTag, setNewTag] = useState<Partial<TemplateTag>>({});
+  const [newSubtag, setNewSubtag] = useState<Partial<SubTemplateTag>>({});
   
   const { toast } = useToast();
 
@@ -42,10 +43,6 @@ const TemplateManager: React.FC = () => {
     if (selectedTemplate) {
       const qrString = generateSampleQRString(selectedTemplate);
       setSampleQRString(qrString);
-      
-      // Generate QR code preview URL
-      // In a real implementation, this would call the actual QR code generation API
-      setQrPreviewUrl(`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrString)}`);
     }
   }, [selectedTemplate]);
 
@@ -80,7 +77,11 @@ const TemplateManager: React.FC = () => {
 
   const handleCreateTemplate = async (name: string, journeyId: string) => {
     try {
-      const newTemplate = await createTemplate(name, journeyId);
+      const newTemplate = await createTemplate({
+        name,
+        journeyId,
+        tags: []
+      });
       setTemplates(prev => [...prev, newTemplate]);
       setSelectedTemplate(newTemplate);
       setIsNewTemplateDialogOpen(false);
@@ -99,18 +100,35 @@ const TemplateManager: React.FC = () => {
     }
   };
 
-  const handleAddTag = async (tag: Partial<TemplateTag>) => {
+  const handleAddTag = async () => {
     if (!selectedTemplate) return;
     
+    // Validate required fields
+    if (!newTag.tagGroup || !newTag.tagId || !newTag.contentDesc || 
+        newTag.minLength === undefined || newTag.maxLength === undefined) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
-      const updatedTemplate = await addTagToTemplate(selectedTemplate.id, tag);
+      const addedTag = await addTagToTemplate(selectedTemplate.id, newTag);
       
       // Update templates list and selected template
+      const updatedTemplate = {
+        ...selectedTemplate,
+        tags: [...selectedTemplate.tags, addedTag]
+      };
+      
       setTemplates(prev => 
         prev.map(t => t.id === updatedTemplate.id ? updatedTemplate : t)
       );
       setSelectedTemplate(updatedTemplate);
       setIsNewTagDialogOpen(false);
+      setNewTag({});
       
       toast({
         title: "Success",
@@ -132,23 +150,33 @@ const TemplateManager: React.FC = () => {
     setIsAddSubtagDialogOpen(true);
   };
 
-  const handleAddSubtag = async (subtag: Partial<SubTemplateTag>) => {
+  const handleAddSubtag = async () => {
     if (!selectedTemplate || selectedParentTagId === null) return;
     
+    // Validate required fields
+    if (!newSubtag.subTagId || !newSubtag.contentDesc || 
+        newSubtag.minLength === undefined || newSubtag.maxLength === undefined) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
-      const updatedTemplate = await addSubtagToTemplate(
+      await addSubtagToTag(
         selectedTemplate.id, 
         selectedParentTagId,
         selectedParentSubtagId,
-        subtag
+        newSubtag
       );
       
-      // Update templates list and selected template
-      setTemplates(prev => 
-        prev.map(t => t.id === updatedTemplate.id ? updatedTemplate : t)
-      );
-      setSelectedTemplate(updatedTemplate);
+      // Refresh templates to get the updated structure
+      await fetchTemplates();
+      
       setIsAddSubtagDialogOpen(false);
+      setNewSubtag({});
       
       toast({
         title: "Success",
@@ -181,17 +209,17 @@ const TemplateManager: React.FC = () => {
       
       <div className="container py-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-brand-primary">Template Manager</h1>
+          <h1 className="text-2xl font-bold text-[#00513B]">Template Manager</h1>
           <TemplateHeaderActions 
             setIsNewTemplateDialogOpen={setIsNewTemplateDialogOpen}
           />
         </div>
         
         <Tabs defaultValue="templates" className="space-y-4">
-          <TabsList className="bg-brand-primary/10">
+          <TabsList className="bg-[#00513B]/10">
             <TabsTrigger 
               value="templates" 
-              className="data-[state=active]:bg-brand-primary data-[state=active]:text-white"
+              className="data-[state=active]:bg-[#00513B] data-[state=active]:text-white"
             >
               Templates
             </TabsTrigger>
@@ -213,7 +241,6 @@ const TemplateManager: React.FC = () => {
                 copyToClipboard={copyToClipboard}
                 setIsNewTagDialogOpen={setIsNewTagDialogOpen}
                 openAddSubtagDialog={openAddSubtagDialog}
-                setIsQrPreviewOpen={setIsQrPreviewOpen}
               />
             </div>
           </TabsContent>
@@ -222,27 +249,50 @@ const TemplateManager: React.FC = () => {
       
       {/* Dialogs */}
       <Dialog open={isNewTemplateDialogOpen} onOpenChange={setIsNewTemplateDialogOpen}>
-        <NewTemplateForm onSubmit={handleCreateTemplate} />
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center text-[#00513B]">
+              <QrCode className="mr-2 h-5 w-5" />
+              Create New Template
+            </DialogTitle>
+          </DialogHeader>
+          <NewTemplateForm onSubmit={handleCreateTemplate} onCancel={() => setIsNewTemplateDialogOpen(false)} />
+        </DialogContent>
       </Dialog>
       
       <Dialog open={isNewTagDialogOpen} onOpenChange={setIsNewTagDialogOpen}>
-        <TagForm onSubmit={handleAddTag} />
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center text-[#00513B]">
+              <QrCode className="mr-2 h-5 w-5" />
+              Add New Tag
+            </DialogTitle>
+          </DialogHeader>
+          <TagForm 
+            tag={newTag} 
+            setTag={setNewTag} 
+            onSubmit={handleAddTag} 
+            onCancel={() => setIsNewTagDialogOpen(false)}
+          />
+        </DialogContent>
       </Dialog>
       
       <Dialog open={isAddSubtagDialogOpen} onOpenChange={setIsAddSubtagDialogOpen}>
-        <SubtagForm 
-          onSubmit={handleAddSubtag}
-          parentTagId={selectedParentTagId}
-          parentSubtagId={selectedParentSubtagId}
-        />
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center text-[#00513B]">
+              <QrCode className="mr-2 h-5 w-5" />
+              Add New Subtag
+            </DialogTitle>
+          </DialogHeader>
+          <SubtagForm 
+            subtag={newSubtag}
+            setSubtag={setNewSubtag}
+            onSubmit={handleAddSubtag}
+            onCancel={() => setIsAddSubtagDialogOpen(false)}
+          />
+        </DialogContent>
       </Dialog>
-      
-      <QrPreviewDialog 
-        isOpen={isQrPreviewOpen}
-        setIsOpen={setIsQrPreviewOpen}
-        qrPreviewUrl={qrPreviewUrl}
-        selectedTemplateName={selectedTemplate?.name || null}
-      />
     </div>
   );
 };

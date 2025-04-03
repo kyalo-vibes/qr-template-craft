@@ -14,7 +14,7 @@ const TemplateHeaderActions: React.FC<TemplateHeaderActionsProps> = ({
     <div className="flex items-center space-x-2">
       <Button
         onClick={() => setIsNewTemplateDialogOpen(true)}
-        className="bg-brand-primary hover:bg-brand-primary/90 text-white"
+        className="bg-[#00513B] hover:bg-[#00513B]/90 text-white"
       >
         <PlusCircle className="mr-2 h-4 w-4" />
         New Template

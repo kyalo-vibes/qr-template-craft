@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { PlusCircle, Copy, Check, EyeIcon, Tag } from "lucide-react";
+import { PlusCircle, Copy, Check, Layers, Tag } from "lucide-react";
 import { Template } from "@/types/template";
 import TagDisplay from './TagDisplay';
+import QrTlvViewer from '../qr/QrTlvViewer';
 
 interface TemplateDetailsProps {
   selectedTemplate: Template | null;
@@ -14,7 +15,6 @@ interface TemplateDetailsProps {
   copyToClipboard: (text: string) => void;
   setIsNewTagDialogOpen: (isOpen: boolean) => void;
   openAddSubtagDialog: (tagId: number, subtagId?: number | null) => void;
-  setIsQrPreviewOpen: (isOpen: boolean) => void;
 }
 
 const TemplateDetails: React.FC<TemplateDetailsProps> = ({
@@ -23,15 +23,16 @@ const TemplateDetails: React.FC<TemplateDetailsProps> = ({
   copySuccess,
   copyToClipboard,
   setIsNewTagDialogOpen,
-  openAddSubtagDialog,
-  setIsQrPreviewOpen
+  openAddSubtagDialog
 }) => {
+  const [showTlvView, setShowTlvView] = useState(false);
+  
   if (!selectedTemplate) {
     return (
       <Card className="md:col-span-2 shadow-sm">
         <CardHeader className="pb-2 border-b border-gray-100">
           <CardTitle className="flex justify-between items-center">
-            <span className="text-brand-primary">Template Details</span>
+            <span className="text-[#00513B]">Template Details</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-4">
@@ -48,17 +49,17 @@ const TemplateDetails: React.FC<TemplateDetailsProps> = ({
     <Card className="md:col-span-2 shadow-sm">
       <CardHeader className="pb-2 border-b border-gray-100">
         <CardTitle className="flex justify-between items-center">
-          <span className="text-brand-primary">
+          <span className="text-[#00513B]">
             {selectedTemplate.name}
           </span>
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={() => setIsQrPreviewOpen(true)}
-            className="text-brand-primary border-brand-primary/30 hover:bg-brand-primary/10"
+            onClick={() => setShowTlvView(!showTlvView)}
+            className="text-[#00513B] border-[#00513B]/30 hover:bg-[#00513B]/10"
           >
-            <EyeIcon className="h-4 w-4 mr-1" />
-            Preview QR
+            <Layers className="h-4 w-4 mr-1" />
+            {showTlvView ? 'Hide TLV' : 'Show TLV'}
           </Button>
         </CardTitle>
       </CardHeader>
@@ -71,7 +72,7 @@ const TemplateDetails: React.FC<TemplateDetailsProps> = ({
             </div>
             <Button 
               onClick={() => setIsNewTagDialogOpen(true)}
-              className="bg-brand-primary hover:bg-brand-primary/90 text-white"
+              className="bg-[#00513B] hover:bg-[#00513B]/90 text-white"
             >
               <PlusCircle className="mr-2 h-4 w-4" />
               Add Tag
@@ -81,15 +82,15 @@ const TemplateDetails: React.FC<TemplateDetailsProps> = ({
           {/* Sample QR String Preview */}
           <div className="mb-4 border rounded-md p-3 bg-gray-50">
             <div className="flex justify-between items-center mb-2">
-              <h4 className="font-semibold text-brand-primary flex items-center">
-                <EyeIcon className="mr-2 h-4 w-4" />
+              <h4 className="font-semibold text-[#00513B] flex items-center">
+                <Layers className="mr-2 h-4 w-4" />
                 Sample QR Data
               </h4>
               <Button 
                 variant="ghost" 
                 size="sm"
                 onClick={() => copyToClipboard(sampleQRString)}
-                className="text-brand-primary hover:text-brand-primary/80"
+                className="text-[#00513B] hover:text-[#00513B]/80"
               >
                 {copySuccess ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </Button>
@@ -99,10 +100,14 @@ const TemplateDetails: React.FC<TemplateDetailsProps> = ({
             </pre>
           </div>
           
+          {showTlvView && (
+            <QrTlvViewer qrString={sampleQRString} className="mb-4" />
+          )}
+          
           <Separator className="my-4" />
           
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-brand-primary flex items-center">
+            <h3 className="text-lg font-semibold text-[#00513B] flex items-center">
               <Tag className="mr-2 h-5 w-5" />
               Tags
             </h3>

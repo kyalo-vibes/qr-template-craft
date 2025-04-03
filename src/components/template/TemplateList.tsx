@@ -21,7 +21,7 @@ const TemplateList: React.FC<TemplateListProps> = ({
   return (
     <Card className="md:col-span-1 h-fit shadow-sm">
       <CardHeader className="pb-2 border-b border-gray-100">
-        <CardTitle className="text-brand-primary flex items-center">
+        <CardTitle className="text-[#00513B] flex items-center">
           <FileCode className="mr-2 h-5 w-5" />
           Templates
         </CardTitle>
@@ -35,7 +35,7 @@ const TemplateList: React.FC<TemplateListProps> = ({
               <li key={template.id}>
                 <Button
                   variant={selectedTemplate?.id === template.id ? "default" : "outline"}
-                  className={`w-full justify-start ${selectedTemplate?.id === template.id ? 'bg-brand-primary' : 'border-brand-primary/30 hover:bg-brand-primary/10 text-brand-primary'}`}
+                  className={`w-full justify-start ${selectedTemplate?.id === template.id ? 'bg-[#00513B]' : 'border-[#00513B]/30 hover:bg-[#00513B]/10 text-[#00513B]'}`}
                   onClick={() => onSelectTemplate(template.id)}
                 >
                   <span className="truncate">{template.name}</span>
